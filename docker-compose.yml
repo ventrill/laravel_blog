@@ -1,0 +1,53 @@
+version: '2'
+services:
+  nginx:
+    container_name: nginx_server
+    hostname: nginx
+    build: _docker/nginx/
+    ports:
+      - "8081:80"
+    links:
+      - fpm
+    volumes_from:
+      - data
+    env_file:
+      _docker/nginx/Dockerfile.env
+
+  fpm:
+    container_name: fpm_server
+    hostname: fpm
+    build: _docker/fpm/
+    ports:
+      - "9001"
+    volumes:
+      - ./_docker/fpm/php.ini:/usr/local/etc/php/conf.d/php.ini
+    volumes_from:
+      - data
+    env_file:
+      _docker/fpm/Dockerfile.env
+    links:
+      - redis
+      - sql
+    depends_on:
+      - sql
+      - redis
+
+  data:
+    build: _docker/data/
+    volumes:
+      - ./:/var/www/html
+
+  sql:
+    container_name: sql_server
+    hostname: sql
+    build: _docker/sql/
+    volumes:
+      - ./_docker/sql/mango.dump:/mango.dump
+#      - ./sql/postgresql_data:/var/lib/postgresql/data
+    ports:
+      - "5032:5432"
+
+  redis:
+    container_name: redis_server
+    hostname: redis
+    image: redis
